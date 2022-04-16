@@ -1,0 +1,12 @@
+#
+# Kuha2 CRON update
+#
+
+# Every minute (for testing)
+# * * * * * root /usr/local/kuha2/kuha2-update.sh >> /proc/1/fd/1
+
+# Every 6 hours 
+0 */6 * * * root /usr/local/kuha2/kuha2-update.sh >> /proc/1/fd/1
+
+# daily at midnight
+# 0 0 * * * root /usr/local/kuha2/kuha2-update.sh >> /proc/1/fd/1
