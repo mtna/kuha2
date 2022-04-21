@@ -45,7 +45,6 @@ Note that mongodb must be running for this to work. This is normally the case if
 
 ## Running the container
 
-
 ### Environment variables
 
 The various Kuha2 services and processes are configured using environment variables, as described in the [platform documentation](https://kuha2.readthedocs.io/en/latest/)
@@ -92,17 +91,16 @@ Consult the kuha2 log files to verify all services have started properly and tha
 ## DDI Indexing
 The container is configured for use with DDI-Codebook XML files, which can be dropped in dedicated directory for automated reindexing. By default, this is scheduled every 6 hours (controlled by the /etc/crond.d/kuha2-cron file).
 
-
 To trigger an immediate update, you can call the shell script directly as follows (or from the container bash shell):
 
 ```docker container exec -it kuha2 /usr/local/kuha2/kuha2-update.sh```
 
 
-## Todos / Wishlist
+## Roadmap
 
 The following improvements can be made to this container:
 
-- Upgrade the container to Kuha 1.x.x
+- Upgrade the container to Kuha 1.x
 - Add an entrypoint script to optionaly run registry update when starting container
 - Setup Mongo security: the current version use and unsecured configuration for MongoDB. Kuha2 setup script will need to be adjusted accordingly. ideally the mongo user/password should be set using environment variables
 - Add runtime parameters / environment variables to
@@ -221,4 +219,4 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 ## Contact
-For feedback, questions, or suggestions contact <mtna@mtna.us>
+For feedback, questions, or suggestions contact <pascal.heus@mtna.us>
