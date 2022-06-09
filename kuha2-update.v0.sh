@@ -11,6 +11,6 @@ NOW=$(date +'%Y-%m-%d %H:%M:%S,%3N')
 echo >&1 "$NOW $ME: Updating Kuha2 metadata"
 cd /usr/local/kuha2
 . kuha_client-env/bin/activate
-kuha_sync --document-store-url http://localhost:6001/v0 /metadata 2>>/var/log/kuha2/kuha2-sync_$LOGSTAMP.log 
+python3 -m kuha_client.kuha_upsert --document-store-url http://localhost:6001/v0 --remove-absent --collection studies --collection variables --collection questions /metadata 2>>/var/log/kuha2/kuha2-update_$LOGSTAMP.log 
 NOW=$(date +'%Y-%m-%d %H:%M:%S,%3N')
-echo >&1 "$NOW $ME: Kuha2 sync completed"
+echo >&1 "$NOW $ME: Kuha2 update completed"

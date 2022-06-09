@@ -28,20 +28,16 @@ The following logs can also be externalized, particularly in a production enviro
 If you wish to create your own landing page or website, you should externalize the ```/usr/share/nginx/html/``` directory, making sure it contains at least an ```index.html``` and  ```error.html``` files. You can also customize the nginx server as describe in the [container documentation](https://hub.docker.com/_/nginx)
 
 ### Database Initialization
-Most of the Kuha2 installation steps are performed in the Dockerfile, with the exception of the database initialization with can be performed by calling the relevant setup script (e.g. from container bash shell or by using the docker exec command). 
 
-Kuha Version 1.x
+Since release 1.x of Kuha2, the MongoDB database stored under /data/db is initialized and ready to use. If you need an external version you can either copy the directory out of the container or use the following procedure:
 
-```./kuha2/kuha_document_store/scripts/setup_mongodb.sh --replica mongo:27017 --replicaset ''```
+1. Launch the container with the /data/db directory externalized, which will create a clean Mondgo DB database
+2. Login the container bash shell (e.g. `docker container exec -it kuha2 bash`)
+3. Run the following command ```/usr/local/kuha2/kuha_document_store/scripts/setup_mongodb.sh --replica localhost:27017 --replicaset '' --database-user-admin kuha2 --database-pass-admin kuha2```
 
-Kuha Version 0.x
-
-```./kuha2/kuha_document_store/scripts/setup_mongodb.sh --database-host=localhost```
-
-Note that mongodb must be running for this to work. This is normally the case if the container is slready running. But if necessary, you can start the service from the bash shell by calling:
-
-```mongod --fork --logpath /var/log/mongodb/mongod.log```
-
+If you are using the now deprecated version 0.x, follow a similar procedure as above, but instead run the following command: 
+```/usr/local/kuha2/kuha_document_store/scripts/setup_mongodb.sh --database-host=localhost```
+Note that this will prompt you for an admin user id and password. You can enter any value like root/root.
 
 ## Running the container
 
@@ -49,10 +45,13 @@ Note that mongodb must be running for this to work. This is normally the case if
 
 The various Kuha2 services and processes are configured using environment variables, as described in the [platform documentation](https://kuha2.readthedocs.io/en/latest/)
 
-The following must be adjusted at runtime for your environment (e.g. using the -e parameter :
+The following must be adjusted at runtime for your environment (e.g. using the docker run -e parameter):
 
 - ```ENV KUHA_OPRH_OP_BASE_URL``` (defaults to http://localhost/oai-pmh). This should match the server public URL (e.g. http://www.mydomain.org/oai-pmh).
 - ```ENV KUHA_OPRH_OP_EMAIL_ADMIN``` (defaults to admin@example.org)
+
+Other environment variables you should consider setting as they are used by the OAI-PMH Identify verb are `KUHA_OPRH_OP_BASE_URL`, `KUHA_OPRH_OP_EMAIL_ADMIN`, `KUHA_OPRH_OP_REPO_NAME`
+
 
 ### Docker run
 
@@ -85,7 +84,7 @@ about to fork child process, waiting until server is ready for connections.
 forked process: 47
 ```
 
-Consult the kuha2 log files to verify all services have started properly and that the .
+Consult the kuha2 log files to verify all services have started properly.
 
 
 ## DDI Indexing
@@ -100,96 +99,26 @@ To trigger an immediate update, you can call the shell script directly as follow
 
 The following improvements can be made to this container:
 
-- Upgrade the container to Kuha 1.x
-- Add an entrypoint script to optionaly run registry update when starting container
+- Add an entry point script to optionally run registry update when starting container
 - Setup Mongo security: the current version use and unsecured configuration for MongoDB. Kuha2 setup script will need to be adjusted accordingly. ideally the mongo user/password should be set using environment variables
 - Add runtime parameters / environment variables to
 	- control cron job schedule
 	- control which components to index (studies, groups variable, questions)
 
-## Technical Notes
+## References
 
-### Kuha2 Services
-
-The document store can be started with:
-
-```./kuha2/kuha_document_store/scripts/run_kuha_document_store.sh --database-host=localhost```
-
-The OSMH services can be started with:
-
-```./kuha2/kuha_osmh_repo_handler/scripts/run_kuha_osmh_repo_handler.sh --document-store-url=localhost:6001```
-
-The OAI-PMH services can be started with:
-```./kuha2/kuha_oai_pmh_repo_handler/scripts/run_kuha_oai_pmh_repo_handler.sh --document-store-url=http://localhost:6001/v0 --oai-pmh-base-url=http://localhost:6003/v0 --oai-pmh-admin-email=nobody@example.com```
-
-A OAI-PMH test can be done with:
-
-```./kuha2/kuha_oai_pmh_repo_handler/scripts/list_records.sh oai_dc```
-
-### Kuha2 Client
-To use the OAI-PMH client in the container, we must first activate the python environment:
-
-```
-cd /usr/local/kuha2
-python3 -m venv kuha_client-env
-. /usr/local/kuha2/kuha_client-env/bin/activate
-```
-
-#### Upsert
-
-To load DDI from a directory 
-
-```
-python3 -m kuha_client.kuha_upsert --document-store-url=host --file-log-path=file_log --remove-absent /path/to/directory
-```
-
-For example
-
-```
-python3 -m kuha_client.kuha_upsert --document-store-url=http://localhost:6001/v0 --file-log-path=kuha.log --remove-absent /metadata
-```
-
-To exclude study_groups
-
-```
-python3 -m kuha_client.kuha_upsert --document-store-url=http://localhost:6001/v0 --file-log-path=kuha.log --remove-absent --collection studies --collection variables --collection questions --loglevel DEBUG /metadata
-```
-
-#### Delete
-
-To delete all content
-
-```python3 -m kuha_client.kuha_delete --document-store-url http://localhost:6001/v0 ALL ALL```
-
-
-### MongoDB
-
-The container exposes two volumes:
-
-```
-/data/configdb
-/data/db
-```
-
-#### Mongo shell
-[Mongo shell help](https://docs.mongodb.com/manual/reference/mongo-shell/)
-
-```show dbs```
-
-```use kuha_document_store```
-
-```show collections```
-
-
-### DDI
-- codeBook cannot have xmlns="http://www.icpsr.umich.edu/DDI" set?
-- serStmt is used to associate with a study_group and therefore must have an @ID attribute
-- when updating, a study is not removed from study groups. Basically changing the serStmt/@ID creates a new study group and does not removes the study from previous one
-
+### Kuha2
+- [Official Documentation](https://kuha2.readthedocs.io/)
+- [BitBucket repository](https://bitbucket.org/tietoarkisto/workspace/projects/KUH)
 
 ### OAI-PMH
+
+- [The Open Archives Initiative Protocol for Metadata Harvesting](http://www.openarchives.org/OAI/openarchivesprotocol.html)
 - [HTTP Requests](http://www.openarchives.org/OAI/openarchivesprotocol.html#HTTPRequestFormat)
 - [Verbs](http://www.openarchives.org/OAI/openarchivesprotocol.html#ProtocolMessages)
+
+### DDI
+- [DDI Alliance](https://ddialliance.org/)
 
 
 ## MIT License
